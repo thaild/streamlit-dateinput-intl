@@ -1,0 +1,2 @@
+recursive-include streamlit_dateinput_intl/frontend/build *
+include pyproject.toml
