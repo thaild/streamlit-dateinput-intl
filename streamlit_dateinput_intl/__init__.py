@@ -1,62 +1,113 @@
 import streamlit as st
+from datetime import date, datetime
+from typing import Optional, Callable, Any
 
-from pathlib import Path
 
-JS = Path("./frontend/build/index.js").read_text(encoding="utf-8")
-print(JS)
-
-out = st.components.v2.component(
-    "streamlit_dateinput_intl.streamlit_dateinput_intl",
-    js=JS,
+streamlit_dateinput_intl_component = st.components.v2.component(
+    "streamlit-dateinput-intl.streamlit_dateinput_intl",
+    js="index-*.js",
+    css="index-*.css",
     html='<div class="react-root"></div>',
 )
 
-
-def on_num_clicks_change():
-    """Callback function for when the number of clicks changes in the frontend."""
-    pass
-
-
-# Create a wrapper function for the component.
-#
-# This is an optional best practice. We could simply expose the component
-# function returned by `st.components.v2.component` and call it done.
-#
-# The wrapper allows us to customize our component's API: we can pre-process its
-# input args, post-process its output value, and add a docstring for users.
-def streamlit_dateinput_intl(name, key=None):
+def streamlit_dateinput_intl(
+    value: Any = "today",
+    min: Optional[Any] = None,
+    max: Optional[Any] = None,
+    key: Optional[str] = None,
+    onChange: Optional[Callable] = None,
+    locale: Optional[str] = None,
+    *,
+    format: str = "YYYY/MM/DD",
+    disabled: bool = False,
+    width: str = "stretch",
+    clearable: bool = False,
+):
     """Create a new instance of "streamlit_dateinput_intl".
 
     Parameters
     ----------
-    name: str
-        The name of the thing we're saying hello to. The component will display
-        the text "Hello, {name}!"
+    value: date, datetime, str, or "today"
+        The value of this widget when it first renders. Defaults to "today".
+        Can be a date, datetime, ISO format string, or "today".
+    min: date, datetime, str, or None
+        The minimum selectable date. If None, there is no minimum.
+    max: date, datetime, str, or None
+        The maximum selectable date. If None, there is no maximum.
     key: str or None
         An optional key that uniquely identifies this component.
-
+    onChange: callable or None
+        An optional callback invoked when this date input's value changes.
+    locale: str or None
+        The locale of the date input. Defaults to "en-US".
+    format: str
+        The format string for displaying the date. Defaults to "YYYY/MM/DD".
+    disabled: bool
+        Whether this date input is disabled. Defaults to False.
+    width: str
+        The width of the component. Defaults to "stretch".
+    clearable: bool
+        Whether this date input is clearable. Defaults to False.
     Returns
     -------
-    int
-        The number of times the component's "Click Me" button has been clicked.
-        (This is the value passed to `Streamlit.setComponentValue` on the
-        frontend.)
-
+    date or None
+        The selected date, or None if no date is selected.
     """
-    # Call through to our private component function. Arguments we pass here
-    # will be sent to the frontend, where they'll be available in an "args"
-    # dictionary.
-    #
-    # "default" is a special argument that specifies the initial return
-    # value of the component before the user has interacted with it.
-    component_value = out(
-        name=name,
+    # Parse date values
+    parsed_value = to_iso_string(value)
+    parsed_min = to_iso_string(min)
+    parsed_max = to_iso_string(max)
+
+    # Prepare data to send to frontend
+    data = {
+        "value": parsed_value,
+        "min": parsed_min,
+        "max": parsed_max,
+        "format": format,
+        "locale": locale,
+        "onChange": onChange,
+        "disabled": disabled,
+        "width": width,
+        "clearable": clearable,
+    }
+
+    # Call the component
+    # The component returns the date value (string or None)
+    component_value = streamlit_dateinput_intl_component(
         key=key,
-        default={"num_clicks": 0},
-        data={"name": name},
-        on_num_clicks_change=on_num_clicks_change,
+        data=data
     )
 
-    # We could modify the value returned from the component if we wanted.
-    # There's no need to do this in our simple example - but it's an option.
-    return component_value
+    # Handle the returned value
+    # It could be a string (ISO date), None, or a dict (if state is returned)
+    if component_value is None:
+        return None
+
+    # If it's a dict (state object), extract the value
+    if isinstance(component_value, dict):
+        component_value = component_value.get("value", component_value)
+
+    # Parse the returned value back to a date if it's a string
+    if isinstance(component_value, str):
+        try:
+            return datetime.fromisoformat(component_value).date()
+        except (ValueError, AttributeError):
+            # If parsing fails, try to parse as date string
+            try:
+                return datetime.strptime(component_value, "%Y-%m-%d").date()
+            except (ValueError, AttributeError):
+                return component_value
+
+    return None
+
+# date/datetimeオブジェクトをISO文字列形式に変換
+def to_iso_string(d: Optional[Any]) -> Optional[str]:
+    if d is None:
+        return None
+    if isinstance(d, str):
+        return d
+    if isinstance(d, datetime):
+        return d.date().isoformat()
+    if isinstance(d, date):
+        return d.isoformat()
+    return None

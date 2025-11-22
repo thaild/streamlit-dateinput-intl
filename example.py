@@ -1,28 +1,48 @@
 import streamlit as st
 from streamlit_dateinput_intl import streamlit_dateinput_intl
+from datetime import date, timedelta
 
 # Add some test code to play with the component while it's in development.
 # During development, we can run this just as we would any other Streamlit
-# app: `$ streamlit run streamlit_dateinput_intl/example.py`
+# app: `$ streamlit run example.py`
 
-st.subheader("Component with constant args")
+# Create an instance with default values
+# selected_date = streamlit_dateinput_intl()
+# st.write(f"Selected date: {selected_date}")
 
-# Create an instance of our component with a constant `name` arg, and
-# print its output value.
-result = streamlit_dateinput_intl("World")
-st.markdown("You've clicked %s times!" % int(result["num_clicks"]))
+st.subheader("Dete Input International")
 
-st.markdown("---")
-st.subheader("Component with variable args")
+# Example with all props
+selected_date_full = streamlit_dateinput_intl(
+    value="today",
+    min=date.today() - timedelta(days=30),
+    max=date.today() + timedelta(days=30),
+    key="date_input_full",
+    format="YYYY/MM/DD",
+    disabled=False,
+    width="stretch",
+    clearable=True,
+    locale="ja"
+)
+st.write(f"Selected date: {selected_date_full}")
 
-# Create a second instance of our component whose `name` arg will vary
-# based on a text_input widget.
-#
-# We use the special "key" argument to assign a fixed identity to this
-# component instance. By default, when a component's arguments change,
-# it is considered a new instance and will be re-mounted on the frontend
-# and lose its current state. In this case, we want to vary the component's
-# "name" argument without having it get recreated.
-name_input = st.text_input("Enter a name", value="Streamlit")
-result = streamlit_dateinput_intl(name_input, key="foo")
-st.markdown("You've clicked %s times!" % int(result["num_clicks"]))
+# st.markdown("---")
+# st.subheader("With custom format")
+
+# Example with custom format
+# selected_date_custom = streamlit_dateinput_intl(
+#     label="Date with custom format",
+#     format="YYYY-MM-DD",
+#     key="date_input_custom"
+# )
+# st.write(f"Selected date: {selected_date_custom}")
+
+# st.markdown("---")
+# st.subheader("Default date input")
+
+# # Example with disabled state
+selected_date_disabled = st.date_input(
+    label="Default date input",
+    key="date_input_disabled"
+)
+st.write(f"Selected date: {selected_date_disabled}")

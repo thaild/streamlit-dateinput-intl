@@ -1,22 +1,30 @@
 import { Component, ComponentArgs } from "@streamlit/component-v2-lib";
 import { StrictMode } from "react";
 import { createRoot, Root } from "react-dom/client";
-
-import MyComponent, {
-  MyComponentDataShape,
-  MyComponentStateShape,
-} from "./MyComponent";
+import { Client as Styletron } from 'styletron-engine-monolithic';
+import { Provider as StyletronProvider } from 'styletron-react';
+import { LightTheme, ThemeProvider, styled } from "baseui";
+// Force load BaseUI Input styles by importing the Input component
+// This ensures all Input-related styles are bundled and available
+import DateInput from "./DateInput";
+import type { DateInputDataShape, DateInputStateShape } from "./DateInput";
 
 // Handle the possibility of multiple instances of the component to keep track
 // of the React roots for each component instance.
 const reactRoots: WeakMap<ComponentArgs["parentElement"], Root> = new WeakMap();
 
-const MyComponentRoot: Component<
-  MyComponentStateShape,
-  MyComponentDataShape
-> = (args) => {
-  const { data, parentElement, setStateValue } = args;
+const engine = new Styletron();
 
+const Centered = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  height: "100%",
+  width: "100%",
+});
+
+const DateInputRoot: Component<DateInputStateShape, DateInputDataShape> = (args) => {
+  const { parentElement, setStateValue, data } = args;  
   // Get the react-root div from the parentElement that we defined in our
   // `st.components.v2.component` call in Python.
   const rootElement = parentElement.querySelector(".react-root");
@@ -35,14 +43,33 @@ const MyComponentRoot: Component<
     reactRoots.set(parentElement, reactRoot);
   }
 
-  // Here we are accessing the data passed from Streamlit on the Python side.
-  const { name } = data;
+  // Create onChange handler that updates the component state
+  const onChange = (date: string | null) => {
+    setStateValue("value", date);
+  };
 
-  // Render/re-render the React application into the root using the React DOM
-  // API.
+  // Extract date input data from args.data and provide defaults
+  const dateInputData = {
+    value: data.value ?? null,
+    min: data.min ?? null,
+    max: data.max ?? null,
+    format: data.format ?? "YYYY/MM/DD",
+    locale: data.locale ?? "en-US",
+    disabled: data.disabled ?? false,
+    width: data.width ?? "stretch",
+    clearable: data.clearable ?? false,
+    onChange: onChange,
+  };
+
   reactRoot.render(
     <StrictMode>
-      <MyComponent setStateValue={setStateValue} name={name} />
+      <StyletronProvider value={engine}>
+        <ThemeProvider theme={LightTheme}>
+          <Centered>
+            <DateInput {...dateInputData} />
+          </Centered>
+        </ThemeProvider>
+      </StyletronProvider>
     </StrictMode>,
   );
 
@@ -58,4 +85,4 @@ const MyComponentRoot: Component<
   };
 };
 
-export default MyComponentRoot;
+export default DateInputRoot;

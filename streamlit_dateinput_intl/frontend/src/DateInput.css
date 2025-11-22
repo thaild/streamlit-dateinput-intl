@@ -1,0 +1,17 @@
+div.stDateInputIntl {
+    width: stretch;
+    height: stretch;
+}
+
+div.stDateInputIntl &> input {
+    width: stretch;
+    height: stretch;
+}
+
+div.stDateInputIntl > input::placeholder {
+    color: #666666;
+}
+
+div.stDateInputIntl > input:focus {
+    outline: none;
+}
